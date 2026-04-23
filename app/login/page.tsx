@@ -1,23 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
-
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const nextPath = searchParams.get("next") ?? "/dashboard";
+  const [nextPath, setNextPath] = useState("/dashboard");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(
-    searchParams.get("error") === "missing_code"
-      ? "Authentication callback failed. Please sign in again."
-      : null,
-  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setNextPath(params.get("next") ?? "/dashboard");
+    if (params.get("error") === "missing_code") {
+      setError("Authentication callback failed. Please sign in again.");
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
