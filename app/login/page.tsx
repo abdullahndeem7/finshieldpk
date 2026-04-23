@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useState, Suspense } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 
-function LoginPageContent() {
+
+export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") ?? "/dashboard";
@@ -135,13 +136,5 @@ function LoginPageContent() {
         </section>
       </div>
     </main>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <LoginPageContent />
-    </Suspense>
   );
 }
