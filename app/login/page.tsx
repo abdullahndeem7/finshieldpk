@@ -4,6 +4,16 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 
+jsximport { Suspense } from "react";
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
