@@ -64,3 +64,7 @@ export function deleteTransaction(txnId: string): boolean {
   transactions.splice(index, 1);
   return true;
 }
+
+export function getTransaction(txnId: string): StoredTransaction | undefined {
+  return transactions.find((item) => item.txn_id === txnId);
+}

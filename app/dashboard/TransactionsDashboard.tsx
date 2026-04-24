@@ -388,20 +388,44 @@ export default function TransactionsDashboard() {
                         {new Date(transaction.timestamp).toLocaleString()}
                       </td>
                       <td className="rounded-r-xl px-3 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(transaction.txn_id)}
-                          disabled={deletingTxnId === transaction.txn_id}
-                          className="rounded-md border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {deletingTxnId === transaction.txn_id ? "Deleting..." : "Delete"}
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => draftSAR(transaction.txn_id)}
+                            disabled={sarLoading}
+                            className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {sarLoading ? "Generating..." : "Generate SAR"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(transaction.txn_id)}
+                            disabled={deletingTxnId === transaction.txn_id}
+                            className="rounded-md border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {deletingTxnId === transaction.txn_id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          ) : null}
+
+          {sarText ? (
+            <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">Suspicious Activity Report</h3>
+                {sarLoading ? (
+                  <span className="text-xs text-slate-500">Generating report…</span>
+                ) : null}
+              </div>
+              <pre className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                {sarText}
+              </pre>
+            </section>
           ) : null}
         </section>
         </>
