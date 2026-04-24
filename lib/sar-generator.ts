@@ -1,13 +1,18 @@
 import OpenAI from 'openai'
 
+const apiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY
+if (!apiKey) {
+  throw new Error('Missing OpenRouter API key. Set OPENAI_API_KEY or OPENROUTER_API_KEY.')
+}
+
 const client = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
+  apiKey,
   baseURL: 'https://openrouter.ai/api/v1',
 })
 
 export async function generateSAR(sarPrompt: string) {
   const response = await client.chat.completions.create({
-    model: 'meta-llama/llama-3.3-70b-instruct:free',
+    model: 'openrouter/auto',
     max_tokens: 1500,
     messages: [
       { role: 'system', content: 'You are a compliance officer...' },
@@ -15,7 +20,7 @@ export async function generateSAR(sarPrompt: string) {
     ],
   })
 
-  return response.choices[0].message.content
+  return response.choices?.[0]?.message?.content ?? ''
 }
 
 // lib/sar-generator.ts

@@ -35,9 +35,10 @@ Write the SAR in formal Pakistani banking compliance language, with a clear Susp
 
     const sar = await generateSAR(sarPrompt);
     return NextResponse.json({ sar });
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : JSON.stringify(error);
     return NextResponse.json(
-      { error: "Failed to generate SAR. Ensure the request is valid and the AI key is configured." },
+      { error: `Failed to generate SAR: ${message}` },
       { status: 500 },
     );
   }
