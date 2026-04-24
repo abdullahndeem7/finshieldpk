@@ -1,26 +1,40 @@
-import OpenAI from 'openai'
-
-const apiKey = process.env.OPENAI_API_KEY || process.env.OPENROUTER_API_KEY
-if (!apiKey) {
-  throw new Error('Missing OpenRouter API key. Set OPENAI_API_KEY or OPENROUTER_API_KEY.')
-}
-
-const client = new OpenAI({
-  apiKey,
-  baseURL: 'https://openrouter.ai/api/v1',
-})
-
 export async function generateSAR(sarPrompt: string) {
-  const response = await client.chat.completions.create({
-    model: 'openrouter/auto',
-    max_tokens: 1500,
-    messages: [
-      { role: 'system', content: 'You are a compliance officer...' },
-      { role: 'user', content: sarPrompt },
-    ],
-  })
+  const openRouterKey = process.env.OPENROUTER_API_KEY
+  const openAiKey = process.env.OPENAI_API_KEY
 
-  return response.choices?.[0]?.message?.content ?? ''
+  if (!openRouterKey && !openAiKey) {
+    throw new Error('Missing API key. Set OPENROUTER_API_KEY or OPENAI_API_KEY.')
+  }
+
+  // Use OpenRouter (preferred for cost)
+  if (openRouterKey) {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openRouterKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'mistralai/mistral-7b-instruct-v0.1',
+        max_tokens: 1500,
+        messages: [
+          { role: 'system', content: 'You are a compliance officer at a Pakistani bank. Generate professional SAR reports in formal banking language following SBP guidelines.' },
+          { role: 'user', content: sarPrompt },
+        ],
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`OpenRouter API error: ${response.status} ${errorText}`)
+    }
+
+    const data = await response.json()
+    return data.choices?.[0]?.message?.content ?? ''
+  }
+
+  // Fallback to OpenAI
+  throw new Error('OpenAI integration not yet implemented. Please use OPENROUTER_API_KEY.')
 }
 
 // lib/sar-generator.ts

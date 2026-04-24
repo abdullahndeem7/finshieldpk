@@ -4,7 +4,7 @@ import {
   addTransaction,
   deleteTransaction,
   listTransactions,
-} from "../../../lib/transactions-store";
+} from "../../../lib/transaction-storage";
 
 type IncomingTransaction = {
   txn_id: string;

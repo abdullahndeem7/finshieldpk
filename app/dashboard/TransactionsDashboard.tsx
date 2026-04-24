@@ -80,9 +80,13 @@ export default function TransactionsDashboard() {
         body: JSON.stringify({ txn_id }),
       });
       const data = await res.json();
-      setSarText(data.sar || 'Failed to generate SAR');
+      if (data.error) {
+        setSarText(`Error: ${data.error}`);
+      } else {
+        setSarText(data.sar || 'Failed to generate SAR');
+      }
     } catch (err) {
-      setSarText('Error generating SAR');
+      setSarText(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setSarLoading(false);
     }
@@ -388,14 +392,18 @@ export default function TransactionsDashboard() {
                         {new Date(transaction.timestamp).toLocaleString()}
                       </td>
                       <td className="rounded-r-xl px-3 py-3 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex gap-2 justify-end">
                           <button
                             type="button"
-                            onClick={() => draftSAR(transaction.txn_id)}
+                            onClick={() => {
+                              setSelected(transaction as unknown as TxnWithAnalysis);
+                              setSarText('');
+                              draftSAR(transaction.txn_id);
+                            }}
                             disabled={sarLoading}
-                            className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-md border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {sarLoading ? "Generating..." : "Generate SAR"}
+                            📄 Generate SAR Report
                           </button>
                           <button
                             type="button"
@@ -413,21 +421,39 @@ export default function TransactionsDashboard() {
               </table>
             </div>
           ) : null}
-
-          {sarText ? (
-            <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-900">Suspicious Activity Report</h3>
-                {sarLoading ? (
-                  <span className="text-xs text-slate-500">Generating report…</span>
-                ) : null}
-              </div>
-              <pre className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                {sarText}
-              </pre>
-            </section>
-          ) : null}
         </section>
+
+        {/* SAR Report Modal */}
+        {selected && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900">
+                Suspicious Activity Report - {selected.txn_id}
+              </h2>
+              <button
+                onClick={() => { setSelected(null); setSarText(''); }}
+                className="text-sm text-slate-500 hover:text-slate-700"
+              >
+                ✕ Close
+              </button>
+            </div>
+            {sarLoading ? (
+              <div className="rounded-xl bg-slate-50 p-8 text-center">
+                <p className="text-sm text-slate-600">Generating SAR report...</p>
+              </div>
+            ) : sarText ? (
+              <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                <pre className="whitespace-pre-wrap font-sans text-sm text-slate-800">
+                  {sarText}
+                </pre>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-slate-50 p-8 text-center">
+                <p className="text-sm text-slate-600">Click "SAR Report" on a transaction to generate the report.</p>
+              </div>
+            )}
+          </section>
+        )}
         </>
         )}
 

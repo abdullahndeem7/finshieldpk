@@ -30,7 +30,7 @@ export default function RootLayout({
       lang="en"
       className={`${plusJakarta.variable} ${jetBrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-slate-50 text-slate-900 flex flex-col">
+      <body suppressHydrationWarning className="min-h-full bg-slate-50 text-slate-900 flex flex-col">
         <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
             <Link href="/" className="font-semibold tracking-wide text-slate-900">
