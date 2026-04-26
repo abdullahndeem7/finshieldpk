@@ -210,24 +210,29 @@ export async function generateSAR(
   txn: Transaction,
   analysis: FraudAnalysis
 ): Promise<string> {
- 
+
+  const amount = Number(txn.amount_pkr ?? 0)
+  const flags = Array.isArray(analysis.flags) ? analysis.flags : []
+  const explanation = analysis.explanation ?? 'No additional analysis provided.'
+  const transactionTime = txn.timestamp ? new Date(txn.timestamp) : new Date()
+
   // Generate only the 3 AI sections — not the whole report
   const aiPrompt = `You are a compliance officer at a Pakistani commercial bank.
 Write exactly 3 sections for a Suspicious Activity Report.
 Be factual, formal, and specific. Use Pakistani banking/SBP terminology.
- 
+
 TRANSACTION:
 - Reference: ${txn.txn_id}
-- Amount: PKR ${txn.amount_pkr.toLocaleString()}
+- Amount: PKR ${amount.toLocaleString()}
 - Channel: ${txn.channel}
 - From: ${txn.sender_iban}
 - To: ${txn.receiver_iban}
 - City: ${txn.location_city || 'Not recorded'}
 - Time: ${txn.timestamp}
 - Risk Score: ${analysis.risk_score}/100
-- Flags: ${analysis.flags.join(', ')}
-- AI Assessment: ${analysis.explanation}
- 
+- Flags: ${flags.join(', ')}
+- AI Assessment: ${explanation}
+
 Write exactly these 3 sections and nothing else:
  
 SECTION_3_DESCRIPTION:
@@ -261,7 +266,10 @@ SECTION_5_ACTION:
   const reportDate = new Date().toLocaleDateString('en-GB', {
     day: '2-digit', month: 'long', year: 'numeric'
   })
- 
+
+  const riskLevel = analysis.risk_level ? analysis.risk_level.toUpperCase() : 'UNKNOWN'
+  const flagsText = flags.length ? flags.join(', ') : 'None'
+
   // Fill the strict template
   const sarText = SAR_TEMPLATE
     .replace('{{REPORT_REF}}',  reportRef)
@@ -269,13 +277,13 @@ SECTION_5_ACTION:
     .replace('{{SENDER_IBAN}}', txn.sender_iban)
     .replace('{{RECEIVER_IBAN}}', txn.receiver_iban)
     .replace('{{TXN_ID}}',      txn.txn_id)
-    .replace('{{TXN_TIME}}',    new Date(txn.timestamp).toLocaleString('en-GB'))
-    .replace('{{AMOUNT}}',      txn.amount_pkr.toLocaleString())
+    .replace('{{TXN_TIME}}',    transactionTime.toLocaleString('en-GB'))
+    .replace('{{AMOUNT}}',      amount.toLocaleString())
     .replace('{{CHANNEL}}',     txn.channel)
     .replace('{{CITY}}',        txn.location_city || 'Not recorded')
-    .replace('{{RISK_SCORE}}',  String(analysis.risk_score))
-    .replace('{{RISK_LEVEL}}',  analysis.risk_level.toUpperCase())
-    .replace('{{FLAGS}}',       analysis.flags.join(', ') || 'None')
+    .replace('{{RISK_SCORE}}',  String(analysis.risk_score ?? 0))
+    .replace('{{RISK_LEVEL}}',  riskLevel)
+    .replace('{{FLAGS}}',       flagsText)
     .replace('{{AI_DESCRIPTION}}', desc)
     .replace('{{AI_BASIS}}',    basis)
     .replace('{{AI_ACTION}}',   action)
