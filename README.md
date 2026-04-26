@@ -35,7 +35,7 @@ FinShield PK is a full-stack AI compliance platform built specifically for Pakis
  
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router, TypeScript) |
+| Framework | Next.js 16 (App Router, TypeScript) |
 | Database | Supabase (PostgreSQL) |
 | Authentication | Supabase Auth |
 | AI Agent | LangGraph + LangChain (ReAct) |
