@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse }  from 'next/server'
 import { supabase }                   from '@/lib/supabase'
 import { generateSAR }                from '@/lib/sar-generator'
+import { getTransaction }             from '../../../lib/transaction-storage'
 
 // POST — generate a new SAR draft
 export async function POST(req: NextRequest) {
@@ -17,7 +18,8 @@ export async function POST(req: NextRequest) {
       .eq('txn_id', txn_id)
       .single()
 
-    if (txnError || !txn) {
+    const transaction = txnError || !txn ? getTransaction(txn_id) : txn
+    if (!transaction) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
     }
 
@@ -27,11 +29,16 @@ export async function POST(req: NextRequest) {
       .eq('txn_id', txn_id)
       .single()
 
-    if (analysisError || !analysis) {
-      return NextResponse.json({ error: 'Analysis not found' }, { status: 404 })
+    const effectiveAnalysis = analysis && !analysisError ? analysis : {
+      risk_score: (transaction as any)?.risk_score ?? 0,
+      risk_level: (transaction as any)?.risk_level ?? 'Unknown',
+      flags: (transaction as any)?.reasons ?? [],
+      explanation: (transaction as any)?.reasons
+        ? `Generated from local risk assessment: ${(transaction as any).reasons.join(', ')}`
+        : 'Generated from transaction data because no fraud_analysis record was found.',
     }
 
-    const sarText = await generateSAR(txn, analysis)
+    const sarText = await generateSAR(transaction, effectiveAnalysis)
     return NextResponse.json({ sar: sarText, txn_id }, { status: 200 })
 
   } catch (error: any) {
