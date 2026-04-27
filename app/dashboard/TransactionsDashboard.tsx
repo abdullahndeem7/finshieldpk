@@ -504,12 +504,10 @@ interface TxnWithAnalysis {
   location_city: string
   timestamp:     string
   status:        string
+  risk_score:    number
+  risk_level:    string
+  reasons:       string[]
   fraud_analysis: {
-    risk_score:    number
-    risk_level:    string
-    flags:         string[]
-    explanation:   string
-    sar_required:  boolean
     review_action: string
     reviewed_by:   string
     reviewed_at:   string
@@ -526,7 +524,13 @@ interface AuditLog {
 }
  
 type ApiResponse = {
-  transactions: StoredTransaction[];
+  transactions: (Omit<StoredTransaction, 'fraud_analysis'> & {
+    fraud_analysis: {
+      review_action: string
+      reviewed_by:   string
+      reviewed_at:   string
+    } | null
+  })[];
 };
  
 type TrendPoint = {
@@ -553,7 +557,7 @@ export default function TransactionsDashboard() {
  
   useEffect(() => {
     loadTransactions()
-    const interval = setInterval(loadTransactions, 30000)
+    const interval = setInterval(loadTransactions, 60000) // 1 minute instead of 30 seconds
     return () => clearInterval(interval)
   }, [])
  
@@ -596,17 +600,38 @@ export default function TransactionsDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ txn_id, action, reviewed_by: 'compliance_officer' }),
       });
-      if (res.ok) {
-        setReviewDone(true);
-        await loadTransactions();
-        setSelected(prev => prev ? {
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Review failed');
+        return;
+      }
+      setReviewDone(true);
+      // Update selected transaction state immediately
+      setSelected(prev => {
+        if (!prev) return prev;
+        return {
           ...prev,
           fraud_analysis: prev.fraud_analysis ? {
             ...prev.fraud_analysis,
             review_action: action,
-          } : null,
-        } : null);
-      }
+            reviewed_by: 'compliance_officer',
+            reviewed_at: new Date().toISOString(),
+          } : {
+            risk_score: 0,
+            risk_level: 'Low',
+            flags: [],
+            explanation: '',
+            sar_required: false,
+            review_action: action,
+            reviewed_by: 'compliance_officer',
+            reviewed_at: new Date().toISOString(),
+          },
+        };
+      });
+      // Refresh transactions list in background
+      await loadTransactions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Review failed');
     } finally {
       setReviewLoading(false);
     }
@@ -633,11 +658,6 @@ export default function TransactionsDashboard() {
       setSarLoading(false);
     }
   }
- 
-  const riskColor = (level: string) =>
-    level === 'critical' ? '#ef4444' :
-    level === 'high'     ? '#f97316' :
-    level === 'medium'   ? '#f59e0b' : '#22c55e';
  
   const reviewColor = (action: string) =>
     action === 'confirmed' ? '#ef4444' :

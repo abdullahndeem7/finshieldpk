@@ -5,6 +5,7 @@ import {
   deleteTransaction,
   listTransactions,
 } from "../../../lib/transaction-storage";
+import { supabase } from "@/lib/supabase";
 
 type IncomingTransaction = {
   txn_id: string;
@@ -31,7 +32,29 @@ function isValidPayload(payload: Partial<IncomingTransaction>): payload is Incom
 }
 
 export async function GET() {
-  return NextResponse.json({ transactions: listTransactions() });
+  const localTxns = listTransactions();
+
+  // Fetch fraud_analysis data from Supabase for all transactions
+  const txnIds = localTxns.map(t => t.txn_id);
+  const { data: analyses } = await supabase
+    .from('fraud_analysis')
+    .select('txn_id, review_action, reviewed_by, reviewed_at')
+    .in('txn_id', txnIds);
+
+  // Join fraud_analysis with transactions
+  const transactionsWithReview = localTxns.map(txn => {
+    const analysis = analyses?.find(a => a.txn_id === txn.txn_id);
+    return {
+      ...txn,
+      fraud_analysis: analysis ? {
+        review_action: analysis.review_action,
+        reviewed_by: analysis.reviewed_by,
+        reviewed_at: analysis.reviewed_at,
+      } : null,
+    };
+  });
+
+  return NextResponse.json({ transactions: transactionsWithReview });
 }
 
 export async function POST(request: NextRequest) {
