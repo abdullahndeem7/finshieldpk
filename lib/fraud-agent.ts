@@ -1,7 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai'
 
 const model = new ChatOpenAI({
-  modelName: 'meta-llama/llama-3.3-70b-instruct:free',
+  modelName: 'openrouter/auto',
   temperature: 0,
   openAIApiKey: process.env.OPENROUTER_API_KEY,
   configuration: {
